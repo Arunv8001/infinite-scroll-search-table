@@ -1,11 +1,10 @@
 import { ChangeEvent } from "react";
 import './SearchInputComponent.css'
 interface Iinput {
-  setInputQuery: (data: string) => void,
-  setPage: (data: number) => void
+  setInputQuery: (data: string) => void
 }
 let timer: any;
-const SearchInputComponent = ({setInputQuery, setPage}: Iinput) => {
+const SearchInputComponent = ({setInputQuery}: Iinput) => {
 
 
   const handleChange = (input: ChangeEvent<HTMLInputElement>) => {
@@ -14,7 +13,6 @@ const SearchInputComponent = ({setInputQuery, setPage}: Iinput) => {
     }
     timer = setTimeout(() => {
       setInputQuery(input.target.value);  
-      setPage(1)
     }, 1000);
     
   };

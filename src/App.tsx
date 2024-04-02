@@ -1,64 +1,70 @@
-import axios from "axios";
 import "./App.css";
 import SearchInputComponent from "./components/search-component/SearchInputComponent.tsx";
-// import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { fetchBooks } from "./api/apiCall.tsx";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import useDebounce from "./hooks/useDebounce.tsx";
 
 
 function App() {
-  const [page, setPage] = useState<number>(1);
   const [inputQuery, setInputQuery] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
-  const [hasMore, sethasMore] = useState<boolean>(false)
-  const [data, setData] = useState<string[]>([]);
   const observer = useRef<IntersectionObserver | null>(null);
 
-  const lastElement = (node :HTMLElement | null) => {
-    if (loading) return;
-    observer.current && observer.current.disconnect();
-    observer.current = new IntersectionObserver((entries) => {
-      if(entries[0].isIntersecting && hasMore) {
-        setPage((prev: number) => prev + 1)
-      } 
-    })
-    if (node) observer.current.observe(node)
-  }
+  const debouncedSearchTerm = useDebounce(inputQuery, 500);
+
+  const { data, error, fetchNextPage, hasNextPage, isFetching, isLoading } =
+    useInfiniteQuery({
+      queryKey: ["inputQuery", debouncedSearchTerm],
+      queryFn: async ({pageParam}) => {
+        if(debouncedSearchTerm) {
+          return fetchBooks(debouncedSearchTerm, pageParam)
+        }
+      return []
+      },
+      initialPageParam: 1,
+      getNextPageParam: (lastPage, allPages) => {
+        return lastPage.length ? allPages.length + 1 : undefined;
+      },
+    });
+
+    const lastElementRef = useCallback(
+      (node: HTMLDivElement) => {
+        if (isLoading) return;
+  
+        if (observer.current) observer.current.disconnect();
+  
+        observer.current = new IntersectionObserver((entries) => {
+          if (entries[0].isIntersecting && hasNextPage && !isFetching) {
+            fetchNextPage();
+          }
+        });
+  
+        if (node) observer.current.observe(node);
+      },
+      [fetchNextPage, hasNextPage, isFetching, isLoading]
+    );
+  
+    const books = useMemo(() => {
+      return data?.pages.reduce((acc, page) => {
+        return [...acc, ...page];
+      }, []);
+    }, [data]);
 
 
-  useEffect(() => {
-    setData([]);
-  }, [inputQuery]);
-
-  useEffect(() => {
-    const getSearchItems = async () => {
-      setLoading(true);
-      const books = await axios.get(
-        `http://openlibrary.org/search.json?title=${inputQuery}&page=${page}`
-      );
-      setLoading(false);
-      sethasMore(books.data.docs.length > 0)
-      setData((prev) => {
-        return [
-          ...new Set([...prev, ...books.data.docs.map((book: { title: any; }) => book.title)]),
-        ];
-      });
-    };
-    if (inputQuery !== "")  getSearchItems();
-  }, [inputQuery, page]);
-
+    if (error) return <h1>Erro occured</h1>;
 
 
   return (
     <>
       <SearchInputComponent
         setInputQuery={setInputQuery}
-        setPage={setPage}
       />
+      
       <div>
-        {data.map((value: string, index: number) => {
-          if (data.length === (index + 1)) {
+        {books && books?.map((value: string, index: number) => {
+          if (books?.length === (index + 1)) {
             return (
-              <div ref={lastElement} className="search-title" key={index}>
+              <div ref={lastElementRef} className="search-title" key={index}>
                 {" "}
                 {value}
               </div>
@@ -73,7 +79,7 @@ function App() {
           }
         })}
       </div>
-      <div>{loading && "Loading..."}</div>
+      <div>{isFetching && "Loading..."}</div>
     </>
   );
 }
