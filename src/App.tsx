@@ -4,6 +4,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { fetchBooks } from "./api/apiCall.tsx";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import useDebounce from "./hooks/useDebounce.tsx";
+import BooksComponent from "./components/books-component/BooksComponent.tsx";
 
 function App() {
   const [inputQuery, setInputQuery] = useState<string>("");
@@ -20,6 +21,7 @@ function App() {
         return [];
       },
       initialPageParam: 1,
+      refetchOnWindowFocus: false,
       getNextPageParam: (lastPage, allPages) => {
         return lastPage.length ? allPages.length + 1 : undefined;
       },
@@ -42,7 +44,7 @@ function App() {
     [fetchNextPage, hasNextPage, isFetching, isLoading]
   );
 
-  const books = useMemo(() => {
+  const books: string[] | void = useMemo(() => {
     return data?.pages.reduce((acc, page) => {
       return [...acc, ...page];
     }, []);
@@ -53,28 +55,10 @@ function App() {
   return (
     <>
       <SearchInputComponent setInputQuery={setInputQuery} />
-
-      <div>
-        {books &&
-          books?.map((value: string, index: number) => {
-            if (books?.length === index + 1) {
-              return (
-                <div ref={lastElementRef} className="search-title" key={index}>
-                  {" "}
-                  {value}
-                </div>
-              );
-            } else {
-              return (
-                <div className="search-title" key={index}>
-                  {" "}
-                  {value}
-                </div>
-              );
-            }
-          })}
-      </div>
+      {/* <BooksComponent books={books}/> */}
+   
       <div>{isFetching && "Loading..."}</div>
+      <div>{!hasNextPage && !isFetching && inputQuery !== "" && <strong>Search has been completed</strong>}</div>
     </>
   );
 }

@@ -13,7 +13,7 @@ const SearchInputComponent = ({setInputQuery}: Iinput) => {
     }
     timer = setTimeout(() => {
       setInputQuery(input.target.value);  
-    }, 1000);
+    }, 500);
     
   };
   return (
