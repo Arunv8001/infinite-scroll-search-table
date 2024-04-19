@@ -1,15 +1,12 @@
-import { useEffect } from "react";
 interface Props {
-  books: string[] | undefined;
+  books: any;
+  lastElementRef: any
 }
 
-const BooksComponent = (books: Props) => {
-  useEffect(() => {
-    console.log(books, "result");
-  });
+const BooksComponent = ({books, lastElementRef}: Props) => {
   return (
     <div>
-      {/* {books &&
+      {books &&
         books?.map((value: string, index: number) => {
           if (books?.length === index + 1) {
             return (
@@ -26,7 +23,7 @@ const BooksComponent = (books: Props) => {
               </div>
             );
           }
-        })} */}
+        })}
     </div>
   );
 };

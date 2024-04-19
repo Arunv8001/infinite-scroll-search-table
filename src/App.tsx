@@ -44,7 +44,7 @@ function App() {
     [fetchNextPage, hasNextPage, isFetching, isLoading]
   );
 
-  const books: string[] | void = useMemo(() => {
+  const books: string[] | undefined = useMemo(() => {
     return data?.pages.reduce((acc, page) => {
       return [...acc, ...page];
     }, []);
@@ -55,10 +55,13 @@ function App() {
   return (
     <>
       <SearchInputComponent setInputQuery={setInputQuery} />
-      {/* <BooksComponent books={books}/> */}
-   
+      <BooksComponent books={books} lastElementRef={lastElementRef} />
       <div>{isFetching && "Loading..."}</div>
-      <div>{!hasNextPage && !isFetching && inputQuery !== "" && <strong>Search has been completed</strong>}</div>
+      <div>
+        {!hasNextPage && books && books.length > 0 && (
+          <strong>You are watching last item from the search</strong>
+        )}
+      </div>
     </>
   );
 }
